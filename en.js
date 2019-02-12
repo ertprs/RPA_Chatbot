@@ -36,3 +36,10 @@ module.exports ={
         return out_fr;
       }
 }
+
+let backto0 = "🔙 Enter 0 to show the menu. "
+function backToZero(sender){
+  setTimeout(function(){
+    sendTextMessage(sender, backto0);
+  }, 500);
+}

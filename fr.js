@@ -35,44 +35,10 @@ module.exports ={
         return out_fr;
       }
 }
-// module.exports = {
-//   setMenu : function (){
-//     return {
-//        "attachment":{
-//            "type":"template",
-//            "text":menu_fr,
-//            "payload":{
-//                "template_type":"button",
-//                // "text": text,
-//                "buttons":[
-//                    {
-//                        "type":"postback",
-//                        "title":"1",
-//                        "payload":"resa"
-//                    },
-//                    {
-//                        "type":"postback",
-//                        "title":"2",
-//                        "payload":"stat_vol"
-//                    },
-//                    {
-//                        "type":"postback",
-//                        "title":"3",
-//                        "payload":"suiv_bag"
-//                    },
-//                    {
-//                        "type":"postback",
-//                        "title":"4",
-//                        "payload":"carte_embar"
-//                    },
-//                    {
-//                        "type":"postback",
-//                        "title":"5",
-//                        "payload":"safar_flyer"
-//                    }
-//                ]
-//            }
-//        }
-//    }
-//   }
-//   }
+
+let backto0 = "🔙 Entez 0 pour afficher le menu. "
+function backToZero(sender){
+  setTimeout(function(){
+    sendTextMessage(sender, backto0);
+  }, 500);
+}
