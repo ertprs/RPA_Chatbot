@@ -184,6 +184,7 @@ connection.query('SELECT * FROM flight WHERE sender_id = ?', [sender], (err,rows
       //message par défaut
       let req = exportReq(language);
       let def = req.sendDefault(); //message default
+      let back = req.backToZero(sender);
 
     //handle digital messages
       if (message.text == '2') {
@@ -195,7 +196,7 @@ connection.query('SELECT * FROM flight WHERE sender_id = ?', [sender], (err,rows
         step = '2';
         updateDB(sender, step, '','', language, tagBag, safar);
         sendTextMessage(sender, stat);
-        backToZero(sender); // Retour au menu
+        backToZero(sender, back);
       }; // texte = 2
       if (rows[0].step == '2' && rows[0].flight == ''){
         //appeler web service
@@ -204,7 +205,7 @@ connection.query('SELECT * FROM flight WHERE sender_id = ?', [sender], (err,rows
         var tr = require('./statutVol.js');
         let statutvol = tr.callStatut(message.text, sender);
         updateDB(sender, step, message.text , flightDate , language, tagBag, safar);
-        backToZero(sender); // Retour au menu
+        backToZero(sender, back);
       }; //end webservice Statut vol
       if (message.text == '3') {
         def = ''; // pas de message DEFAULT
@@ -214,7 +215,7 @@ connection.query('SELECT * FROM flight WHERE sender_id = ?', [sender], (err,rows
         step = '3';
         updateDB(sender, step, flight , flightDate , language,'', safar);
         sendTextMessage(sender, track);
-        backToZero(sender); // Retour au menu
+        backToZero(sender, back);
       }; // texte = 3
       if (rows[0].step == '3' && rows[0].tagBag == ''){
         def = ''; // pas de message DEFAULT
@@ -222,7 +223,7 @@ connection.query('SELECT * FROM flight WHERE sender_id = ?', [sender], (err,rows
         var tr = require('./trackBag.js');
         let track = tr.callTrack(message.text, sender);
         updateDB(sender, step, flight , flightDate , language, message.text, safar);
-        backToZero(sender); // Retour au menu
+        backToZero(sender, back);
       }; //end webservice Track Bagage
       if (message.text == '4') {
         def = ''; // pas de message DEFAULT
@@ -232,7 +233,7 @@ connection.query('SELECT * FROM flight WHERE sender_id = ?', [sender], (err,rows
         step = '4';
         // updateDB(sender, step, flight , flightDate , language, tagBag , safar);
         sendTextMessage(sender, file);
-        backToZero(sender); // Retour au menu
+        backToZero(sender, back);
       }; // texte = 4
       if (message.text == '5') {
         def = ''; // pas de message DEFAULT
@@ -243,7 +244,7 @@ connection.query('SELECT * FROM flight WHERE sender_id = ?', [sender], (err,rows
         step = '5';
         updateDB(sender, step, flight , flightDate , language, tagBag , '');
         sendTextMessage(sender, miles);
-        backToZero(sender); // Retour au menu
+        backToZero(sender, back);
       }; // texte = 5
       if (rows[0].step == '5' && rows[0].safar == ''){
         def = ''; // pas de message DEFAULT
@@ -251,7 +252,7 @@ connection.query('SELECT * FROM flight WHERE sender_id = ?', [sender], (err,rows
         var tr = require('./safarFlyer.js');
         let miles = tr.callSafar(message.text, sender);
         updateDB(sender, step, flight , flightDate , language, tagBag, message.text);
-        backToZero(sender); // Retour au menu
+        backToZero(sender, back);
       }; //end webservice Safar Flyer
       if (message.text == 'OPT-OUT') {
         def = '';// pas de message DEFAULT
@@ -392,3 +393,8 @@ function exportReq (lang){
 }
 
 // Supprimer ligne user si OPT-OUT
+function backToZero(sender, text){
+  setTimeout(function(){
+    sendTextMessage(sender, text);
+  }, 700);
+}

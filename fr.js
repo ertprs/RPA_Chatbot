@@ -13,7 +13,8 @@ let trackBag_fr = "Tapez <Tag bagage><ESPACE><Date de vol><ESPACE><Nom>" + "\n" 
 let default_msg_fr = "Je crois que je ne vous suis pas.";
 let miles_fr = "Veuillez renseigner votre n° Safar Flyer"+ "\n" +
                     "Exemple : 123456789";
-let out_fr = "Bye !";
+let out_fr = "Merci d'avoir choisi la Royal Air Maroc ! À la prochaine 👋";
+let backto0 = "🔙 Entez 0 pour afficher le menu. "
 
 module.exports ={
   setMenu : function (){
@@ -33,12 +34,15 @@ module.exports ={
       },
   optOut: function (){
         return out_fr;
+      },
+  backToZero : function (){
+        return backto0;
       }
 }
 
-let backto0 = "🔙 Entez 0 pour afficher le menu. "
-function backToZero(sender){
-  setTimeout(function(){
-    sendTextMessage(sender, backto0);
-  }, 500);
-}
+
+// function backToZero(sender){
+//   setTimeout(function(){
+//     sendTextMessage(sender, backto0);
+//   }, 500);
+// }
