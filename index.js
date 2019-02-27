@@ -19,18 +19,12 @@ const
 * Database initialization
 */
 // mysql variables
-let step,
-    language,
-    flight,
-    flightDate,
-    usr_lang,
-    tagBag,
-    safar;
+let step, language, flight, flightDate, usr_lang, tagBag, boardpass, safar, claim;
 
 const connection = mysql.createConnection({
   host: 'localhost',
   user: 'root',
-  password: 'root',
+  password: '',
   database: 'green_data'
 });
 connection.connect((err) => {
@@ -106,65 +100,64 @@ function processMessage(event) {
     ///// Require language files
     var fr = require('./fr');
     var en = require('./en');
-    var ar = require('./ar');
 
-connection.query('SELECT * FROM flight WHERE sender_id = ?', [sender], (err,rows) => {
-  console.log(rows[0],"000000000000000000000000");
-  if(!rows[0]){
-    const plane = "✈";
-    // Message N°2
-    const africa = "🌍";
-    let text_plane = plane + " Bienvenue / Welcome to " + "Royal Air Maroc" + " on Whatsapp " + plane;
+  connection.query('SELECT * FROM flight WHERE sender_id = ?', [sender], (err,rows) => {
+    console.log("ROW0 : ", rows[0]);
+    if(!rows[0]){
+      const plane = "✈";
+      // Message N°2
+      const africa = "🌍";
+      let text_plane = plane + " Bienvenue / Welcome to " + "Royal Air Maroc" + " on Messenger " + plane;
 
-    console.log("Received message from senderId: " + sender); //  Get senders ID
-    console.log("Message is: " + JSON.stringify(message)); //
-    sendTextMessage(sender, text_plane);
+      console.log("Received message from senderId: " + sender); //  Get senders ID
+      console.log("Message is: " + JSON.stringify(message)); //
+      sendTextMessage(sender, text_plane);
 
-    let text_lang = africa + " Select your language " + "\n" +
-                    africa + " Choisissez votre langue " + "\n";
-    var replies = [{
-                      "content_type": "text",
-                      "title": "FR",
-                      "payload": "fr",
-                      },
-                      {
-                      "content_type": "text",
-                      "title": "EN",
-                      "payload": "en",
-                      }];
-    console.log(text_lang, "Africaaa!!");
-    setTimeout(function(){
-      sendQuickReply(sender, text_lang, replies)
-    }, 500);
-    step = '0';
-    // tagBag = rows[0].tagBag;
-    mysqlData(sender, step, '','', '','','');
-  } else {
-    /*
-    * Initialiser les données de la table
-    */
-    step = rows[0].step; flight = rows[0].flight; flightDate = rows[0].flightDate;
-    language = rows[0].language; tagBag = rows[0].tagBag; safar = rows[0].safar;
-    /*Fin de l'initialisation */
-    // Handle languages
-    if (step == '0' && language == ''){
-      // si la langue est définie on ne propose plus le menu langue
-      let reply;
-      switch (message.text) {
-        case 'FR':
-        let menu_fr = fr.setMenu();
-        reply = [{
-                          "content_type": "text",
-                          "title": "OPT-OUT",
-                          "payload": "OPT-OUT",
+      let text_lang = africa + " Enter EN for English " + "\n" +
+                      africa + " Tapez FR pour le Français " + "\n";
+      var replies = [{
+                        "content_type": "text",
+                        "title": "FR",
+                        "payload": "fr",
+                        },
+                        {
+                        "content_type": "text",
+                        "title": "EN",
+                        "payload": "en",
                         }];
-        // tagBag = rows[0].tagBag;
-        language = message.text;
-        step = '0';
-        updateDB(sender, step, '','', language , tagBag, safar);
-        sendQuickReply(sender, menu_fr, reply);
-          break;
-          case 'EN':
+      console.log(text_lang, "Africaaa!!");
+      setTimeout(function(){
+        sendQuickReply(sender, text_lang, replies)
+      }, 500);
+      step = '0';
+      // tagBag = rows[0].tagBag;
+      mysqlData(sender, step, '','', '','','','','','');
+    } else {
+      // Mettre les messages texte UpperCase
+      message.text = message.text.toUpperCase();
+      /*
+      * Initialiser les données de la table
+      */
+      step = rows[0].step; language = rows[0].language; reservation = rows[0].reservation;
+      flight = rows[0].flight; flightDate = rows[0].flightDate; tagBag = rows[0].tagBag;
+      boardpass = rows[0].boardpass; safar = rows[0].safar; claim = rows[0].claim;
+      /*Fin de l'initialisation */
+
+      /* Récupérer les messages */
+      // if (step == '0'){
+        if(message.text == 'FR'){
+          let menu_fr = fr.setMenu();
+          reply = [{
+                            "content_type": "text",
+                            "title": "OPT-OUT",
+                            "payload": "OPT-OUT",
+                          }];
+          // tagBag = rows[0].tagBag;
+          language = message.text;
+          step = '0';
+          updateDB(sender, step, language , reservation ,flight, flightDate, tagBag,boardpass, safar, claim);
+          sendQuickReply(sender, menu_fr, reply);
+        } else if(message.text == 'EN'){
           let menu_en = en.setMenu();
           reply = [{
                             "content_type": "text",
@@ -173,119 +166,90 @@ connection.query('SELECT * FROM flight WHERE sender_id = ?', [sender], (err,rows
                           }];
           language = message.text;
           step = '0';
-          updateDB(sender, step, '','', language,'', safar);
+          updateDB(sender, step, language , reservation ,flight, flightDate, tagBag,boardpass, safar, claim);
           sendQuickReply(sender, menu_en, reply);
-            break;
-        default:
+        } else if(message.text == '1'){
+          let req = exportReq(language);
+          let pnr = req.setPNR();
+          step = '1';
+          updateDB(sender, step, language , reservation ,flight, flightDate, tagBag,boardpass, safar, claim);
+          sendTextMessage(sender, pnr);
+        } else if (message.text == '2') {
+          let req = exportReq(language);
+          let stat = req.setFlightStat();
+          step = '2';
+          updateDB(sender, step, language , reservation ,flight, flightDate, tagBag,boardpass, safar, claim);
+          sendTextMessage(sender, stat);
+        } else if (message.text == '3') {
+          let req = exportReq(language);
+          let track = req.setTrackBag();
+          step = '3';
+          updateDB(sender, step, language , reservation ,flight, flightDate, tagBag,boardpass, safar, claim);
+          sendTextMessage(sender, track);
+        } else if (message.text == '4') {
+          let req = exportReq(language);
+          let pnr = req.setPNR();
+          step = '4';
+          updateDB(sender, step, language , reservation ,flight, flightDate, tagBag,boardpass, safar, claim);
+          sendTextMessage(sender, pnr);
+        } else if (message.text == '5') {
+          let req = exportReq(language);
+          let miles = req.setMiles();
+          step = '5';
+          updateDB(sender, step, language , reservation ,flight, flightDate, tagBag,boardpass, safar, claim);
+          sendTextMessage(sender, miles);
+        } else if (message.text == 'OPT-OUT') {
+          let req = exportReq(language);
+          let out = req.optOut();
+          connection.query('DELETE FROM flight WHERE sender_id = ?', [sender], (err, result) => {
+          if (err) throw err;
+            sendTextMessage(sender, out);
+          });
+          }  else {
+            if(message.text == '0'){
+              let req = exportReq(language);
+              let menu = req.setMenu();
+              reply = [{
+                            "content_type": "text",
+                            "title": "OPT-OUT",
+                            "payload": "OPT-OUT",
+                          }];
+           step = '0';
+            updateDB(sender, step, language , reservation ,flight, flightDate, tagBag,boardpass, safar, claim);
+            sendQuickReply(sender, menu, reply);
+        } // texte = 0
 
-      }; // end switch langue
-    }; // step = 0
-    if (message.text != 'FR' && message.text != 'EN  '  ){
-      //message par défaut
-      let req = exportReq(language);
-      let def = req.sendDefault(); //message default
-      let back = req.backToZero(sender);
+          if (step == '1'){
+          var tr = require('./retrievePNR.js');
+            let pnrDetails = tr.callPNR(message.text, sender, language);
+            updateDB(sender, step, language , message.text , flight , flightDate, tagBag,boardpass, safar, claim);
+          }
+          if (step == '2'){
+          var tr = require('./statutVol.js');
+            let statutvol = tr.callStatut(message.text, sender, language);
+            updateDB(sender, step, language , reservation ,message.text, flightDate, tagBag,boardpass, safar, claim);
+          }
+          if (step == '3'){
+          var tr = require('./trackBag.js');
+            let track = tr.callTrack(message.text, sender, language);
+            updateDB(sender, step, language , reservation , flight, flightDate, message.text ,boardpass, safar, claim);
+          }
+          if (step == '4'){
+          var tr = require('./boardingPass.js');
+          // var tr = require('./pdf.js');
+          let file = tr.sendFile(message.text, sender, language);
+          updateDB(sender, step, language , reservation , flight, flightDate, tagBag , message, safar, claim);
+          }
+          if (step == '5'){
+          const callSafar = require('./safarFlyer.js');
+            callSafar(message.text, sender, language);
+            updateDB(sender, step, language , reservation , flight, flightDate, tagBag ,boardpass, message.text, claim);
+          }
+        }
+    }; //if(!rows[0])
+  }); //connection.query
 
-    //handle digital messages
-      if (message.text == '2') {
-        def = '';// pas de message DEFAULT
-        let req = exportReq(language);
-        let stat = req.setFlightStat();
-        console.log(stat);
-        language = rows[0].language;
-        step = '2';
-        updateDB(sender, step, '','', language, tagBag, safar);
-        sendTextMessage(sender, stat);
-        backToZero(sender, back);
-      }; // texte = 2
-      if (rows[0].step == '2' && rows[0].flight == ''){
-        //appeler web service
-        def = ''; // pas de message DEFAULT
-        //appeler web service
-        var tr = require('./statutVol.js');
-        let statutvol = tr.callStatut(message.text, sender);
-        updateDB(sender, step, message.text , flightDate , language, tagBag, safar);
-        backToZero(sender, back);
-      }; //end webservice Statut vol
-      if (message.text == '3') {
-        def = ''; // pas de message DEFAULT
-        //track bag
-        let req = exportReq(language);
-        let track = req.setTrackBag();
-        step = '3';
-        updateDB(sender, step, flight , flightDate , language,'', safar);
-        sendTextMessage(sender, track);
-        backToZero(sender, back);
-      }; // texte = 3
-      if (rows[0].step == '3' && rows[0].tagBag == ''){
-        def = ''; // pas de message DEFAULT
-        //appeler web service
-        var tr = require('./trackBag.js');
-        let track = tr.callTrack(message.text, sender);
-        updateDB(sender, step, flight , flightDate , language, message.text, safar);
-        backToZero(sender, back);
-      }; //end webservice Track Bagage
-      if (message.text == '4') {
-        def = ''; // pas de message DEFAULT
-        //track bag
-        var tr = require('./boardingPass.js');
-        let file = tr.sendFIle(message.text, sender);
-        step = '4';
-        // updateDB(sender, step, flight , flightDate , language, tagBag , safar);
-        sendTextMessage(sender, file);
-        backToZero(sender, back);
-      }; // texte = 4
-      if (message.text == '5') {
-        def = ''; // pas de message DEFAULT
-        //track bag
-        let req = exportReq(language);
-        let miles = req.setMiles();
-        console.log(miles, "WTFFFFF");
-        step = '5';
-        updateDB(sender, step, flight , flightDate , language, tagBag , '');
-        sendTextMessage(sender, miles);
-        backToZero(sender, back);
-      }; // texte = 5
-      if (rows[0].step == '5' && rows[0].safar == ''){
-        def = ''; // pas de message DEFAULT
-        //appeler web service
-        var tr = require('./safarFlyer.js');
-        let miles = tr.callSafar(message.text, sender);
-        updateDB(sender, step, flight , flightDate , language, tagBag, message.text);
-        backToZero(sender, back);
-      }; //end webservice Safar Flyer
-      if (message.text == 'OPT-OUT') {
-        def = '';// pas de message DEFAULT
-      let req = exportReq(language);
-      let out = req.optOut();
-      connection.query('DELETE FROM flight WHERE sender_id = ?', [sender], (err, result) => {
-        if (err) throw err;
-        sendTextMessage(sender, out);
-      });
-      }; //Opt-out
-      if (def != '') {
-        language = language;
-        step = '0';
-        updateDB(sender, step, flight, flightDate, language, tagBag, safar);
-        // sendTextMessage(sender, def);
-
-        let menu = req.setMenu();
-        let reply = [{
-                          "content_type": "text",
-                          "title": "OPT-OUT",
-                          "payload": "OPT-OUT",
-                        }];
-        // setTimeout(function(){
-          sendQuickReply(sender, menu, reply);
-        // }, 500);
       }
-    };// default message
-  };// end if(!rows[0])
-
-}); //connection.query
-
-
-    }
 } // end function processMessage
 
 // Send text message
@@ -332,30 +296,32 @@ function callSendAPI(messageData) {
   });
 } // end function callSendAPI
 
-function mysqlData(sender, step, flight, flightDate, lang, tagBag, safar){
+function mysqlData(sender, step, lang, reservation, flight, flightDate, tagBag, boardpass, safar, claim){
   let date = new Date();
   date = date.toJSON().slice(0, 19).replace(/[-]/g, ':');
   date = date.replace(/[T]/g, ' ');
   //Define the data to insert in database !!
-  let data = {sender_id: sender, step: step, lastMsgDate: date, flight: flight, flightDate: flightDate, language: lang, tagBag: tagBag, safar: safar};
+  let data = {sender_id: sender, step: step, lastMsgDate: date, language: lang, reservation: reservation, flight: flight,
+    flightDate: flightDate, tagBag: tagBag, boardpass: boardpass, safar: safar, claim: claim};
   // Check if there's a row with the same sender_id
   connection.query('SELECT * FROM flight WHERE sender_id = ?', [sender], (err,rows) => {
       connection.query('INSERT INTO flight SET ?', data, (err, res) => {
       if(err) throw err;
-      console.log('Data inserted', '+++++++++++++++++++++++++++++++++++');
+      console.log('Data inserted');
       });
   });
 
 }
 // Update data inmysql
-function updateDB(sender, step, flight, flightDate, lang, tagBag, safar){
+function updateDB(sender, step, lang, reservation, flight, flightDate, tagBag, boardpass, safar, claim){
   let date = new Date();
   date = date.toJSON().slice(0, 19).replace(/[-]/g, ':');
   date = date.replace(/[T]/g, ' ');
-  let data = {sender_id: sender, step: step, lastMsgDate: date, flight: flight, flightDate: flightDate, language: lang, tagBag: tagBag, safar: safar};
+  let data = {sender_id: sender, step: step, lastMsgDate: date, language: lang, reservation: reservation, flight: flight,
+    flightDate: flightDate, tagBag: tagBag, boardpass: boardpass, safar: safar, claim: claim};
   connection.query( 'UPDATE flight SET ? Where sender_id = ?', [data, sender],(err, result) => {
       if (err) throw err;
-      console.log('Data updated', '???????????????????????????????????????????,');
+      console.log('Data updated');
     });
 }
 // Vérifier la langue choisie par l'utilisateur
@@ -363,7 +329,7 @@ function updateDB(sender, step, flight, flightDate, lang, tagBag, safar){
   function checkLang(sender){
     let rowLang;
   connection.query('SELECT * FROM flight WHERE sender_id = ?', [sender], (err,rows) => {
-    console.log(rows[0].language, 'ROWSROWSROWSROWS');
+    console.log(rows[0].language);
     if (rows[0].language == 'FR'){
       rowLang = 'FR';
     } else if(rows[0].language == 'EN') {
@@ -380,7 +346,7 @@ function exportReq (lang){
   ///// Require language files
   var fr = require('./fr');
   var en = require('./en');
-  var ar = require('./ar');
+  // var ar = require('./ar');
   let req;
     if (lang == 'FR'){
       req = fr;
@@ -396,5 +362,5 @@ function exportReq (lang){
 function backToZero(sender, text){
   setTimeout(function(){
     sendTextMessage(sender, text);
-  }, 700);
+  }, 2000);
 }
